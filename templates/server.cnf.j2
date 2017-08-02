@@ -1,0 +1,17 @@
+# percona Server configuration
+#
+# {{ ansible_managed }}
+
+[percona]
+socket                         = /var/lib/mysql/mysql.sock
+bind-address                   = {{ mysql_address | default('127.0.0.1') }}
+port                           = {{ mysql_port | default(3306) }}
+skip_name_resolve              = 1
+
+default_storage_engine         = InnoDB
+
+character_set_server           = utf8
+collation_server               = utf8_general_ci
+
+thread_concurrency             = {{ ansible_processor_vcpus * 2 }}
+innodb_buffer_pool_size        = {{ (ansible_memtotal_mb * 0.75) | int }}M

@@ -1,0 +1,9 @@
+---
+mysql_address: '127.0.0.1'
+mysql_ports: 3306
+
+mysql_create_databases: []
+mysql_remove_databases: []
+mysql_schema_files: []
+
+mysql_additional_packages: []

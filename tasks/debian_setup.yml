@@ -1,0 +1,27 @@
+---
+
+- name: Add percona repository key
+  apt_key:
+    url: 'http://www.percona.com/downloads/RPM-GPG-KEY-percona'
+    state: present
+  register: percona_apt_key
+  tags:
+    - setup
+    - percona
+
+- name: Update keyring
+  when: percona_apt_key.changed
+  command: "apt-key update"
+  tags:
+    - setup
+    - percona
+    - skip_ansible_lint
+
+- name: Add percona repository
+  apt_repository:
+    repo: "{{ mysql_apt_repo }}"
+    update_cache: true
+    state: present
+  tags:
+    - setup
+    - percona

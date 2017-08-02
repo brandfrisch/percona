@@ -1,0 +1,179 @@
+---
+# tasks file for percona
+
+- name: set distro-specific variables
+  include_vars: "{{ ansible_os_family | lower }}.yml"
+  ignore_errors: true
+
+- include: "{{ ansible_os_family | lower }}_setup.yml"
+
+- name: Install percona requirements
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ mysql_packages }}"
+    - "{{ mysql_additional_packages }}"
+  tags:
+    - package
+    - percona
+
+- name: Copy percona config
+  when: mysql_config_files is defined
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - "{{ mysql_config_files }}"
+  notify: restart mysql
+  tags:
+    - config
+    - percona
+
+- name: Did we do our first run on Centos?
+  when: ansible_os_family == 'RedHat'
+  stat:
+    path: /var/lib/mysql/.percona-first-run-done
+  register: is_percona_first_run_done
+
+- include: "redhat_unset_password.yml"
+  when: >
+    ansible_os_family == 'RedHat' and
+    is_percona_first_run_done.stat.exists == False
+
+- name: Add mysql to ssl-cert group
+  when: mysql_ssl_key is defined
+  user:
+    name: mysql
+    append: true
+    groups: ssl-cert
+  tags:
+    - setup
+    - percona
+
+- name: Start and enable percona
+  service:
+    name: mysql
+    state: started
+    enabled: true
+  tags:
+    - service
+    - percona
+
+- name: Securing root user with password
+  mysql_user:
+    name: root
+    host: localhost
+    password: "{{ mysql_root_password | mandatory }}"
+    priv: "*.*:ALL,GRANT"
+    check_implicit_admin: true
+    state: present
+  tags:
+    - setup
+    - percona
+
+- name: Create password-file with root password credentials
+  blockinfile:
+    dest: "/root/.my.cnf"
+    create: true
+    block: |
+      [client]
+      user=root
+      password={{ mysql_root_password }}
+  tags:
+    - setup
+    - percona
+
+- name: Restrict root login to localhost and mysql_address
+  mysql_user:
+    name: root
+    host: "{{ item }}"
+    password: "{{ mysql_root_password }}"
+    priv: "*.*:ALL,GRANT"
+    check_implicit_admin: true
+    state: present
+  with_items:
+    - "127.0.0.1"
+    - "{{ mysql_address }}"
+  tags:
+    - setup
+    - percona
+
+- name: Deleting all logins from other hosts
+  when: item != "localhost"
+  mysql_user:
+    name: root
+    host: "{{ item }}"
+    state: absent
+    check_implicit_admin: true
+  with_items:
+    - "::1"
+    - "{{ ansible_hostname }}"
+    - "{{ ansible_fqdn }}"
+  tags:
+    - setup
+    - percona
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    host: "{{ item }}"
+    state: absent
+    check_implicit_admin: true
+  with_items:
+    - localhost
+    - "{{ ansible_hostname }}"
+  tags:
+    - setup
+    - percona
+
+- name: Remove test database
+  mysql_db:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ mysql_remove_databases }}"
+    - test
+  notify: restart mysql
+  tags:
+    - setup
+    - percona
+
+- name: Create databases
+  mysql_db:
+    name: "{{ item.name }}"
+    collation: "{{ item.collation | default('utf8_general_ci') }}"
+    encoding: "{{ item.encoding | default('utf8') }}"
+    state: present
+  with_items:
+    - "{{ mysql_create_databases }}"
+  tags:
+    - setup
+    - percona
+
+- name: Transfer Schema to database
+  template:
+    src: "{{ item }}"
+    dest: "/var/tmp/{{ item | basename | replace('.j2', '') }}"
+  with_items:
+    - "{{ mysql_schema_files }}"
+  register: mysql_db_schema_update
+  tags:
+    - schema
+    - setup
+    - percona
+
+- name: Import Schema
+  when: item.changed
+  mysql_db:
+    state: import
+    name: smtp
+    target: "{{ item.dest }}"
+    config_file: /root/.my.cnf
+  with_items:
+    - "{{ mysql_db_schema_update.results }}"
+  tags:
+    - schema
+    - setup
+    - percona
+    - skip_ansible_lint

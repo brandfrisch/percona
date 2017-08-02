@@ -1,0 +1,18 @@
+---
+dependency:
+  name: galaxy
+
+
+docker:
+  containers:
+    - name: percona-ubuntu-16-04
+      image: brandfrisch/ubuntu-16.04
+      image_version: 'latest'
+      command: /lib/systemd/systemd
+      privileged: true
+    - name: percona-centos-6-9
+      image: brandfrisch/centos-6
+      image_version: latest
+
+verifier:
+  name: goss

@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS `access_client` (
+  `hostname_or_ip` varchar(255) NOT NULL DEFAULT '',
+  `take_action` varchar(255) NOT NULL DEFAULT 'REJECT' COMMENT 'OK, REJECT, DISCARD, PERMIT',
+  `why` varchar(255) DEFAULT '',
+  PRIMARY KEY (`hostname_or_ip`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Search the specified access database for the client hostname, parent domains, client IP address, or networks obtained by stripping least significant octets.';
