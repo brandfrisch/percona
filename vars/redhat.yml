@@ -7,7 +7,6 @@ mysql_packages:
   - percona-xtrabackup
   - MySQL-python
   - mysqltuner
-  - mytop
 
 mysql_config_files:
   - { src: 'server.cnf.j2', dest: '/etc/my.cnf.d/server.cnf' }
