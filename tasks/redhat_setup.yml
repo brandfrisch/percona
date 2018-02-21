@@ -1,9 +1,0 @@
----
-
-- name: Install the percona repo rpm from a remote repo
-  yum:
-    name: https://www.percona.com/redir/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
-    state: present
-  tags:
-    - setup
-    - percona

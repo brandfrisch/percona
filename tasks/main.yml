@@ -1,11 +1,31 @@
 ---
 # tasks file for percona
 
-- name: set distro-specific variables
-  include_vars: "{{ ansible_os_family | lower }}.yml"
-  ignore_errors: true
+- name: Add percona repository key
+  apt_key:
+    url: 'http://www.percona.com/downloads/RPM-GPG-KEY-percona'
+    state: present
+  register: percona_apt_key
+  tags:
+    - setup
+    - percona
 
-- include: "{{ ansible_os_family | lower }}_setup.yml"
+- name: Update keyring
+  when: percona_apt_key.changed
+  command: "apt-key update"
+  tags:
+    - setup
+    - percona
+    - skip_ansible_lint
+
+- name: Add percona repository
+  apt_repository:
+    repo: "{{ mysql_apt_repo }}"
+    update_cache: true
+    state: present
+  tags:
+    - setup
+    - percona
 
 - name: Install percona requirements
   package:
@@ -29,17 +49,6 @@
   tags:
     - config
     - percona
-
-- name: Did we do our first run on Centos?
-  when: ansible_os_family == 'RedHat'
-  stat:
-    path: /var/lib/mysql/.percona-first-run-done
-  register: is_percona_first_run_done
-
-- include: "redhat_unset_password.yml"
-  when: >
-    ansible_os_family == 'RedHat' and
-    is_percona_first_run_done.stat.exists == False
 
 - name: Add mysql to ssl-cert group
   when: mysql_ssl_key is defined
@@ -162,18 +171,3 @@
     - schema
     - setup
     - percona
-
-- name: Import Schema
-  when: item.changed
-  mysql_db:
-    state: import
-    name: smtp
-    target: "{{ item.dest }}"
-    config_file: /root/.my.cnf
-  with_items:
-    - "{{ mysql_db_schema_update.results }}"
-  tags:
-    - schema
-    - setup
-    - percona
-    - skip_ansible_lint

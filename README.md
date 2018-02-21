@@ -1,4 +1,4 @@
-percona [![Build Status](https://travis-ci.org/brandfrisch/percona.svg?branch=master)](https://travis-ci.org/brandfrisch/percona)
+percona
 =========
 
 This is a rule to setup percona on a unix system
