@@ -1,0 +1,15 @@
+---
+service:
+  mysql:
+    enabled: true
+    running: true
+user:
+  mysql:
+    exists: true
+    groups:
+      - mysql
+    home: /nonexistent
+    shell: /bin/false
+group:
+  mysql:
+    exists: true
