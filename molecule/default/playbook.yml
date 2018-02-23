@@ -7,8 +7,8 @@
     mysql_root_password: foobarbaz
     mysql_address: '0.0.0.0'
     mysql_create_databases:
-      - {name: 'smtp', collation: 'utf8_general_ci', encoding: 'utf8'}
-      - {name: 'backoffice'}
+      - { name: 'smtp', collation: 'utf8_general_ci', encoding: 'utf8' }
+      - { name: 'backoffice' }
     mysql_schema_files:
       - 'tests/templates/test.sql.j2'
 
