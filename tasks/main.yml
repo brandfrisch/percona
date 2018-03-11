@@ -92,6 +92,9 @@
       [client]
       user=root
       password={{ mysql_root_password }}
+    owner: root
+    group: root
+    mode: 0600
   tags:
     - setup
     - percona
@@ -167,6 +170,9 @@
   template:
     src: "{{ item }}"
     dest: "/var/tmp/{{ item | basename | replace('.j2', '') }}"
+    owner: root
+    group: root
+    mode: 0644
   with_items:
     - "{{ mysql_schema_files }}"
   register: mysql_db_schema_update
